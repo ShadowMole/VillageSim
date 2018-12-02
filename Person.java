@@ -37,6 +37,8 @@ public class Person {
     private HairStyle[] hairStyleAlleles;
     private EyeColor[] eyeAlleles;
 
+    private Job job;
+
     public Person(String fN, String lN, Gender g, int a, int w, Person m, Person f, ArrayList<Person> s, int b, SkinColor[] sc, HairStyle[] hs, HairColor[] hc, EyeColor[] ec) {
         firstName = fN;
         lastName = lN;
@@ -129,6 +131,9 @@ public class Person {
     public void act(ArrayList<Person> others, int counter){
         if((counter - birthday) % 360 == 0){
             age++;
+            if(age == 16){
+                //pickJob();
+            }
         }
 
         Random rng = new Random();
@@ -432,6 +437,14 @@ public class Person {
     public SkinColor getRandomSkinColors(){
         Random rng = new Random();
         return skinAlleles[rng.nextInt(2)];
+    }
+
+    public Job getJob(){
+        return job;
+    }
+
+    public void pickJob(){
+        job = JobBuilder.newWorker();
     }
 
     public String toString(){

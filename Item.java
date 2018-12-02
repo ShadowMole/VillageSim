@@ -1,19 +1,14 @@
-public class Item {
-    private String name;
-    private int number;
-    private int price;
+public abstract class Item {
+    protected String name;
+    protected int price;
 
-    public Item(String s, int n){
+    public Item(String s, int p){
         name = s;
-        number = n;
+        price = p;
     }
 
     public String getName(){
         return name;
-    }
-
-    public int getNumber(){
-        return number;
     }
 
     public int getPrice(){

@@ -1,8 +1,18 @@
+import java.util.ArrayList;
 public abstract class Job {
-    private String name;
-    private ArrayList<ItemType> produces;
-    private ArrayList<ItemType> needs;
-    private ArrayList<Item> inventory;
+    protected String name;
+    protected ItemType[] produces;
+    protected ItemType[] needs;
+    protected ArrayList<Item> inventory;
+    protected int totalFood;
+    
+    public Job(){
+        inventory = new ArrayList<>();
+    }
+
+    public void initialInventory(){}
+
+    public void initialFirstInventory(){};
 
     public String getName(){
         return name;
@@ -14,11 +24,15 @@ public abstract class Job {
         return inventory;
     }
 
-    public ArrayList<ItemType> getProduces(){
+    public ItemType[] getProduces(){
         return produces;
     }
 
-    public ArrayList<ItemType> getNeeds() {
+    public ItemType[] getNeeds() {
         return needs;
+    }
+
+    public void firstFood(){
+
     }
 }
