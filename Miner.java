@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 public class Miner extends Job {
 
     public Miner(){
@@ -8,8 +10,17 @@ public class Miner extends Job {
     }
 
     @Override
-    public void initialFirstInventory(){
-        inventory.add(new Tool("PickAxe",27000, 520 + Randomizer.getRandom(401)));
-        inventory.add(new Tool("Cart", 500, 0 + Randomizer.getRandom(101)));
+    public void work(ArrayList<Item> inven, int intel){
+
+    }
+
+    @Override
+    public void initialInventory(ArrayList<Item> inven){
+        inven.add(0, ItemBuilder.newItem("Metal", 0));
+    }
+
+    @Override
+    public void firstInventory(ArrayList<Item> inven){
+
     }
 }

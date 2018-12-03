@@ -7,4 +7,12 @@ public class Tool extends Item {
 
         durability = d;
     }
+
+    public int getDurability(){
+        return durability;
+    }
+
+    public void use(){
+        durability--;
+    }
 }

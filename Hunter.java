@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 public class Hunter extends Job {
 
     public Hunter(){
@@ -8,9 +10,17 @@ public class Hunter extends Job {
     }
 
     @Override
-    public void initialFirstInventory(){
-        inventory.add(ItemBuilder.newItem("Knife", 0));
-        inventory.add(ItemBuilder.newItem("Arrow", 20));
-        inventory.add(ItemBuilder.newItem("Bow", 0));
+    public void work(ArrayList<Item> inven, int intel){
+
+    }
+
+    @Override
+    public void initialInventory(ArrayList<Item> inven){
+        inven.add(0, ItemBuilder.newItem("Arrow", 0));
+    }
+
+    @Override
+    public void firstInventory(ArrayList<Item> inven){
+
     }
 }

@@ -37,6 +37,10 @@ public class Person {
     private HairStyle[] hairStyleAlleles;
     private EyeColor[] eyeAlleles;
 
+    private ArrayList<Item> inventory;
+
+    protected int totalFood;
+
     private Job job;
 
     public Person(String fN, String lN, Gender g, int a, int w, Person m, Person f, ArrayList<Person> s, int b, SkinColor[] sc, HairStyle[] hs, HairColor[] hc, EyeColor[] ec) {
@@ -125,6 +129,10 @@ public class Person {
         }else{
             genderS = "Male";
         }
+
+        inventory = new ArrayList<>();
+        totalFood = 0;
+
         Driver.updateStatistics(genderS, skin, hairC, hairS, eye);
     }
 
@@ -417,6 +425,10 @@ public class Person {
 
     public void setDead(){
         alive = false;
+    }
+
+    public ArrayList<Item> getInventory(){
+        return inventory;
     }
 
     public HairStyle getRandomHairStyles(){

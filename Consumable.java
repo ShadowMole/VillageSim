@@ -11,4 +11,12 @@ public class Consumable extends Item {
     public int getNumber(){
         return number;
     }
+
+    public void addMore(int n){
+        number += n;
+    }
+
+    public void use(int n){
+        number -= n;
+    }
 }

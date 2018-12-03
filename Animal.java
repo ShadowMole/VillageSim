@@ -18,7 +18,7 @@ public class Animal extends Item{
     }
 
     public int getBirths() {
-        return births - 2 + Randomizer.getRandom(5);
+        return births;
     }
 
     public int getLife() {
@@ -27,5 +27,9 @@ public class Animal extends Item{
 
     public int getFood() {
         return food;
+    }
+
+    public void live(){
+        life--;
     }
 }
