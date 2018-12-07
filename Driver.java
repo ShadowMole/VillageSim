@@ -88,31 +88,31 @@ public class Driver {
             people.add(PersonBuilder.createPerson());
         }
         counter = 0;
-        runSim(days, people);
+        runSim(days, people, true);
         printPeople(people);
-        printStatistics();
+        printStatistics(people);
     }
 
     public static boolean chooseControlSim(int command, ArrayList<Person> people){
         boolean continueSim;
         switch (command){
             case 1:
-                runSim(1, people);
+                runSim(1, people, false);
                 continueSim = true;
                 break;
 
             case 2:
-                runSim(7, people);
+                runSim(7, people, false);
                 continueSim = true;
                 break;
 
             case 3:
-                runSim(30, people);
+                runSim(30, people, false);
                 continueSim = true;
                 break;
 
             case 4:
-                runSim(360, people);
+                runSim(360, people, false);
                 continueSim = true;
                 break;
 
@@ -122,7 +122,7 @@ public class Driver {
                 break;
 
             case 6:
-                printStatistics();
+                printStatistics(people);
                 continueSim = true;
                 break;
 
@@ -138,8 +138,11 @@ public class Driver {
         return continueSim;
     }
 
-    public static void runSim(int days, ArrayList<Person> people){
+    public static void runSim(int days, ArrayList<Person> people, boolean uncontrolled){
         for(int i = 0; i < days; i++){
+            if(uncontrolled && i % 360 == 0){
+                System.out.println("Year: " + (i / 360) + ", Population: " + people.size());
+            }
             for(int j = 0; j < people.size(); j++){
                 people.get(j).act(people, counter);
                 if(!people.get(j).isAlive()){
@@ -158,7 +161,8 @@ public class Driver {
         }
     }
 
-    public static void printStatistics(){
+    public static void printStatistics(ArrayList<Person> people){
+        System.out.println("Population: " + people.size());
         System.out.println("Gender:\nMale: " + stats[0][0] + "\nFemale: " + stats[0][1]);
         System.out.println("\nSkin Color:\nWhite: " + stats[1][0] + "\nBlack: " + stats[1][1] + "\nTan: " + stats[1][2]);
         System.out.println("\nHair Color:\nBlack: " + stats[2][0] + "\nBrown: " + stats[2][1] + "\nBlond: " + stats[2][2] + "\nRed: " + stats[2][3] + "\nGinger: " + stats[2][4] + "\nLight Brown: " + stats[2][5] + "\nDirty Blond: " + stats[2][6]);

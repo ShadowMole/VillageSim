@@ -1,3 +1,5 @@
+import javafx.scene.control.RadioMenuItem;
+
 import java.util.Random;
 import java.util.ArrayList;
 public class PersonBuilder {
@@ -22,7 +24,33 @@ public class PersonBuilder {
         HairStyle[] hs = {mother.getRandomHairStyles(), father.getRandomHairStyles()};
         HairColor[] hc = {mother.getRandomHairColors(), father.getRandomHairColors()};
 
-        Person p = new Person(first, last, g, 0, 0, mother, father, new ArrayList<>(), counter, sc, hs, hc, ec);
+        int comRange = father.getCompetence() - mother.getCompetence();
+        if(comRange == 0){
+            comRange += 1;
+        }else if(comRange < 0){
+                comRange *= -1;
+        }
+        int com = ((father.getCompetence() + mother.getCompetence()) / 2) - comRange + Randomizer.getRandom(comRange * 2);
+        if(com > 20){
+            com = 20;
+        }else if(com < 1){
+            com = 1;
+        }
+
+        int paraRange = father.getParanoid() + mother.getParanoid();
+        if(paraRange == 0){
+            paraRange += 1;
+        }else if(paraRange < 0){
+            paraRange *= -1;
+        }
+        int para = ((father.getParanoid() + mother.getParanoid()) / 2) - paraRange + Randomizer.getRandom(paraRange * 2);
+        if(para > 30){
+            para = 30;
+        }else if( para < 1){
+            para = 1;
+        }
+
+        Person p = new Person(first, last, g, 0, 0, mother, father, new ArrayList<>(), counter, sc, hs, hc, ec, 20, com, para);
         for(int i = 0; i < p.getMother().getChildren().size(); i++){
             p.addSibling(p.getMother().getChildren().get(i));
         }
@@ -31,7 +59,7 @@ public class PersonBuilder {
         }
         mother.addChild(p);
         father.addChild(p);
-
+        System.out.println(p.getFirstName() + " " + p.getLastName() + " is born.");
         return p;
     }
 
@@ -45,14 +73,20 @@ public class PersonBuilder {
         }
         String last = lastNames[rng.nextInt(lastNames.length)];
         int age = rng.nextInt(10) + 16;
-        int wealth = rng.nextInt(451) + 50;
+        int wealth = rng.nextInt(1501) + 500;
 
         SkinColor[] sc = {RandomEnum.getRandomSkinColors(), RandomEnum.getRandomSkinColors()};
         EyeColor[] ec = {RandomEnum.getRandomEyeColors(), RandomEnum.getRandomEyeColors()};
         HairStyle[] hs = {RandomEnum.getRandomHairStyles(), RandomEnum.getRandomHairStyles()};
         HairColor[] hc = {RandomEnum.getRandomHairColors(), RandomEnum.getRandomHairColors()};
 
-        Person p = new Person(first, last, g, age, wealth, null, null, new ArrayList<Person>(), 0, sc, hs, hc, ec);
+        int compet = Randomizer.getRandom(20 ) + 1;
+
+        int para = Randomizer.getRandom(30) + 1;
+
+        Person p = new Person(first, last, g, age, wealth, null, null, new ArrayList<Person>(), 0, sc, hs, hc, ec, 200, compet, para);
+
+        p.pickJob();
 
         return p;
     }

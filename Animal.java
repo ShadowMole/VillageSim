@@ -4,6 +4,9 @@ public class Animal extends Item{
     private int births;
     private int birthRate;
     private int food;
+    private int age;
+    private boolean isPregnant;
+    private int pregnant;
 
     public Animal(String s, int p, int l, int b, int br, int f){
         super(s, p);
@@ -11,6 +14,7 @@ public class Animal extends Item{
         births = b;
         birthRate = br;
         food = f;
+
     }
 
     public int getBirthRate() {
@@ -31,5 +35,30 @@ public class Animal extends Item{
 
     public void live(){
         life--;
+        age++;
+        if(isPregnant){
+            pregnant--;
+        }
+    }
+
+    public int getAge(){
+        return age;
+    }
+
+    public int getPregnant(){
+        return pregnant;
+    }
+
+    public boolean getIsPregnant(){
+        return isPregnant;
+    }
+
+    public void setPregnant(){
+        pregnant = birthRate / 4;
+        isPregnant = true;
+    }
+
+    public void notPregnant(){
+        isPregnant = false;
     }
 }

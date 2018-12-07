@@ -15,7 +15,15 @@ public class Food extends Item {
         return food;
     }
 
-    public void eat(){
-        food--;
+    public int eat(int eat){
+        int check = eat;
+        for(int i = 0; i < eat; i++){
+            food--;
+            check--;
+            if(food == 0){
+                return check;
+            }
+        }
+        return 0;
     }
 }

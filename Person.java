@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Random;
 public class Person {
 
@@ -43,7 +44,12 @@ public class Person {
 
     private Job job;
 
-    public Person(String fN, String lN, Gender g, int a, int w, Person m, Person f, ArrayList<Person> s, int b, SkinColor[] sc, HairStyle[] hs, HairColor[] hc, EyeColor[] ec) {
+    private int health;
+
+    private int competence;
+    private int paranoid;
+
+    public Person(String fN, String lN, Gender g, int a, int w, Person m, Person f, ArrayList<Person> s, int b, SkinColor[] sc, HairStyle[] hs, HairColor[] hc, EyeColor[] ec, int hlth, int intel, int para) {
         firstName = fN;
         lastName = lN;
         gender = g;
@@ -133,6 +139,11 @@ public class Person {
         inventory = new ArrayList<>();
         totalFood = 0;
 
+        health = hlth;
+
+        competence = intel;
+        paranoid = para;
+
         Driver.updateStatistics(genderS, skin, hairC, hairS, eye);
     }
 
@@ -140,83 +151,84 @@ public class Person {
         if((counter - birthday) % 360 == 0){
             age++;
             if(age == 16){
-                //pickJob();
-            }
-        }
-
-        Random rng = new Random();
-        if(gender == Gender.FEMALE){
-            if(spouse != null && spouse.isAlive()){
-                if(!isPregnant){
-                    if((age < 50 || spouse.getAge() < 50) && rng.nextInt(1500) < 1){
-                        pregnancy = 270;
-                        isPregnant = true;
-                    }
-                }
-            }
-            if(isPregnant){
-                if(pregnancy == 0){
-                    others.add(PersonBuilder.newPerson(this, spouse, counter));
-                    if(rng.nextInt(88) < 1){
-                        others.add(PersonBuilder.newPerson(this, spouse, counter));
-                    }
-                    isPregnant = false;
-                }else{
-                    pregnancy--;
-                }
+                pickJob();
             }
         }
         if(age >= 16){
-            int interactWith = rng.nextInt(20) + 5;
+            job.work(inventory, competence);
+            eat();
+
+            if(gender == Gender.FEMALE){
+                if(spouse != null && spouse.isAlive()){
+                    if(!isPregnant){
+                        if((age < 50 || spouse.getAge() < 50) && Randomizer.getRandom(1500) < 1){
+                            pregnancy = 270;
+                            isPregnant = true;
+                        }
+                    }
+                }
+                if(isPregnant){
+                    if(pregnancy == 0){
+                        others.add(PersonBuilder.newPerson(this, spouse, counter));
+                        if(Randomizer.getRandom(88) < 1){
+                            others.add(PersonBuilder.newPerson(this, spouse, counter));
+                        }
+                        isPregnant = false;
+                    }else{
+                        pregnancy--;
+                    }
+                }
+            }
+            int interactWith = Randomizer.getRandom(20) + 5;
             for(int i = 0; i < interactWith; i++){
-                Person interact = others.get(rng.nextInt(others.size()));
+                Person interact = others.get(Randomizer.getRandom(others.size()));
                 if(!interact.equals(this)){
-                    int change;
+                    int change = 0;
                     if(isFamily(interact)){
-                        int value = rng.nextInt(10);
+                        int value = Randomizer.getRandom(10);
                         if(value < 3){
-                            change = 10;
+                            change += 10;
                         }else if(value < 8){
-                            change = 5;
+                            change += 5;
                         }else{
-                            change = -5;
+                            change += -5;
                         }
                     }else{
                         if(interact.getAge() < 16){
-                            int value = rng.nextInt(10);
+                            int value = Randomizer.getRandom(10);
                             if(value < 2){
-                                change = -10;
+                                change += -10;
                             }else if(value < 5){
-                                change = -5;
+                                change += -5;
                             }else if(value < 8){
-                                change = 5;
+                                change += 5;
                             }else{
-                                change = 10;
+                                change += 10;
                             }
                         }
                         if(otherGender(interact)){
-                            int value = rng.nextInt(20);
+                            int value = Randomizer.getRandom(20);
                             if(value < 5){
-                                change = 20;
+                                change += 20;
                             }else if(value < 10){
-                                change = 5;
+                                change += 5;
                             }else if(value < 13){
-                                change = 10;
+                                change += 10;
                             }else if(value < 17){
-                                change = -5;
+                                change += -5;
                             }else{
-                                change = -25;
+                                change += -25;
                             }
                         }else{
-                            int value = rng.nextInt(10);
+                            int value = Randomizer.getRandom(10);
                             if(value < 2){
-                                change = -5;
+                                change += -5;
                             }else if(value < 4){
-                                change = -10;
+                                change += -10;
                             }else if(value < 7){
-                                change = 5;
+                                change += 5;
                             }else{
-                                change = 10;
+                                change += 10;
                             }
                         }
                     }
@@ -226,40 +238,117 @@ public class Person {
                         relationships.put(interact, 500 + change);
                     }
                     interact.setRelationship(this, change);
-                    if(!married && !(interact.isMarried()) && otherGender(interact) && interact.getAge() >= 16 && relationships.get(interact) > 950 && !(isFamily(interact)) && rng.nextInt(1000) < relationships.get(interact)){
+                    if(!married && !(interact.isMarried()) && otherGender(interact) && interact.getAge() >= 16 && relationships.get(interact) > 950 && !(isFamily(interact)) && Randomizer.getRandom(2000) < relationships.get(interact)){
                         married = true;
                         spouse = interact;
                         interact.setMarried(this);
                     }
-                    if(relationships.get(interact) < 50 && rng.nextInt(5000) < relationships.get(interact)){
-                        if(rng.nextInt(3) == 0){
+                    if(relationships.get(interact) < 100 && Randomizer.getRandom(1500) < relationships.get(interact)){
+                        if(Randomizer.getRandom(3) == 0){
                             setDead();
                             for(Person p : relationships.keySet()){
-                                if(relationships.get(p) > 700){
-                                    interact.setRelationship(p, -300);
+                                if(relationships.get(p) > 800){
+                                    interact.setRelationship(p, - 500);
                                 }
                             }
+                            System.out.println(interact.getFirstName() + " " + interact.getLastName() + " has killed " + firstName + " " + lastName + " in self defense.");
+
                         }else{
                             interact.setDead();
                             for(Person p : interact.getRelationships().keySet()){
-                                if(interact.getRelationships().get(p) > 700){
-                                    setRelationship(p, -300);
+                                if(interact.getRelationships().get(p) > 800){
+                                    setRelationship(p, - 500);
                                 }
                             }
+                            System.out.println(firstName + " " + lastName + " has murdered " + interact.getFirstName() + " " + interact.getLastName() + ".");
                         }
                     }
                 }
             }
-        }else if(age > 5){
-            int interactWith = rng.nextInt(10) + 3;
-            for(int i = 0; i < interactWith; i++){
-                Person p = others.get(rng.nextInt(others.size()));
-            }
         }else{
-
+            parentEat();
+            int interactWith = Randomizer.getRandom(10) + 3;
+            for(int i = 0; i < interactWith; i++){
+                Person p = others.get(Randomizer.getRandom(others.size()));
+            }
         }
-        if(rng.nextInt(500000) < age){
+        if(health <= 0 || Randomizer.getRandom(500000) < age){
             alive = false;
+            if(health <= 0){
+                System.out.println(firstName + " " + lastName + " has died due to starvation.");
+            }else{
+                System.out.println(firstName + " " + lastName + " has died due to disease.");
+            }
+        }
+    }
+
+    public void eat(){
+        int eat = 9;
+        Iterator<Item> it = inventory.iterator();
+        while (eat > 0 && it.hasNext()) {
+            Item j = it.next();
+            if(j instanceof Food){
+               eat = ((Food) j).eat(eat);
+               if(eat > 0){
+                   it.remove();
+                   if(job instanceof Farmer && j.getName().equals("Milk")){
+                       ((Farmer) job).eatMilk();
+                   }else if(job instanceof Farmer && j.getName().equals("Carrot")){
+                       ((Farmer) job).eatCarrot();
+                   }else if(job instanceof Farmer && j.getName().equals("Potato")){
+                       ((Farmer) job).eatPotato();
+                   }
+               }
+            }
+        }
+        if(eat == 0){
+            health += 1;
+        }else{
+            health -= eat * 2;
+        }
+    }
+
+    public int childEat(){
+        int eat = 6;
+        Iterator<Item> it = inventory.iterator();
+        while (eat > 0 && it.hasNext()) {
+            Item j = it.next();
+            if(j instanceof Food){
+                eat = ((Food) j).eat(eat);
+                if(eat > 0){
+                    it.remove();
+                    if(job instanceof Farmer && j.getName().equals("Milk")){
+                        ((Farmer) job).eatMilk();
+                    }else if(job instanceof Farmer && j.getName().equals("Carrot")){
+                        ((Farmer) job).eatCarrot();
+                    }else if(job instanceof Farmer && j.getName().equals("Potato")){
+                        ((Farmer) job).eatPotato();
+                    }
+                }
+            }
+        }
+        return eat;
+    }
+
+    public void parentEat(){
+        int eat;
+        if(father.isAlive() && mother.isAlive()) {
+            if (Randomizer.getRandom(2) == 0) {
+                eat = mother.childEat();
+            } else {
+                eat = father.childEat();
+            }
+        }else if(father.isAlive()){
+            eat = father.childEat();
+        }else if(mother.isAlive()){
+            eat = mother.childEat();
+        }else{
+            eat = 3;
+        }
+        if(eat == 0){
+            health += 1;
+        }else{
+            health -= eat * 3;
         }
     }
 
@@ -331,6 +420,211 @@ public class Person {
             }
         }
         return false;
+    }
+    
+    public void interact(ArrayList<Person> others){
+        if(age >= 16){
+            int interactWith = Randomizer.getRandom(20) + 5;
+            for(int i = 0; i < interactWith; i++) {
+                Person interact = others.get(Randomizer.getRandom(others.size()));
+                if (!interact.equals(this)) {
+                    int change = 0;
+                    if (isFamily(interact)) {
+                        int value = Randomizer.getRandom(10);
+                        if (value < 3) {
+                            change += 10;
+                        } else if (value < 8) {
+                            change += 5;
+                        } else {
+                            change += -5;
+                        }
+                    } else {
+                        if (interact.getAge() < 16) {
+                            int value = Randomizer.getRandom(10);
+                            if (value < 2) {
+                                change += -10;
+                            } else if (value < 5) {
+                                change += -5;
+                            } else if (value < 8) {
+                                change += 5;
+                            } else {
+                                change += 10;
+                            }
+                        } else {
+                            if (otherGender(interact)) {
+                                int value = Randomizer.getRandom(20);
+                                if (value < 5) {
+                                    change += 20;
+                                } else if (value < 10) {
+                                    change += 5;
+                                } else if (value < 13) {
+                                    change += 10;
+                                } else if (value < 17) {
+                                    change += -5;
+                                } else {
+                                    change += -25;
+                                }
+                            } else {
+                                int value = Randomizer.getRandom(10);
+                                if (value < 2) {
+                                    change += -5;
+                                } else if (value < 4) {
+                                    change += -10;
+                                } else if (value < 7) {
+                                    change += 5;
+                                } else {
+                                    change += 10;
+                                }
+                            }
+                        }
+                        trade(interact);
+                    }
+                    setRelationship(interact, change);
+                    interact.setRelationship(this, change);
+                    if (!married && !(interact.isMarried()) && otherGender(interact) && interact.getAge() >= 16 && relationships.get(interact) > 950 && !(isFamily(interact)) && Randomizer.getRandom(2000) < relationships.get(interact)) {
+                        married = true;
+                        spouse = interact;
+                        interact.setMarried(this);
+                    }
+                    if (relationships.get(interact) < 100 && Randomizer.getRandom(1500) < relationships.get(interact)) {
+                        if (Randomizer.getRandom(3) == 0) {
+                            setDead();
+                            for (Person p : relationships.keySet()) {
+                                if (relationships.get(p) > 800) {
+                                    p.setRelationship(interact, -500);
+                                }
+                            }
+                            System.out.println(interact.getFirstName() + " " + interact.getLastName() + " has killed " + firstName + " " + lastName + " in self defense.");
+
+                        } else {
+                            interact.setDead();
+                            for (Person p : interact.getRelationships().keySet()) {
+                                if (interact.getRelationships().get(p) > 800) {
+                                    p.setRelationship(this, -500);
+                                }
+                            }
+                            System.out.println(firstName + " " + lastName + " has murdered " + interact.getFirstName() + " " + interact.getLastName() + ".");
+                        }
+                    }
+                }
+            }
+        }else{
+            
+        }
+    }
+
+    public void trade(Person p){
+        if(job instanceof Farmer){
+            if(p.getJob() instanceof Farmer){
+
+            }else if(p.getJob() instanceof Butcher){
+
+            }else if(p.getJob() instanceof Baker){
+
+            }else if(p.getJob() instanceof Blacksmith){
+
+            }else if(p.getJob() instanceof Carpenter){
+
+            }else if(p.getJob() instanceof Clothier){
+
+            }else{
+
+            }
+        }else if(job instanceof Hunter){
+            if(p.getJob() instanceof Farmer){
+
+            }else if(p.getJob() instanceof Butcher){
+
+            }else if(p.getJob() instanceof Clothier){
+
+            }else if(p.getJob() instanceof Blacksmith){
+
+            }else if(p.getJob() instanceof Carpenter){
+
+            }
+        }else if(job instanceof Butcher){
+            if(p.getJob() instanceof Farmer){
+
+            }else if(p.getJob() instanceof Butcher){
+
+            }else if(p.getJob() instanceof Clothier){
+
+            }else if(p.getJob() instanceof Blacksmith){
+
+            }else if(p.getJob() instanceof Carpenter){
+
+            }else{
+
+            }
+        }else if(job instanceof Baker){
+            if(p.getJob() instanceof Farmer){
+
+            }else if(p.getJob() instanceof Butcher){
+
+            }else if(p.getJob() instanceof Clothier){
+
+            }else if(p.getJob() instanceof Blacksmith){
+
+            }else if(p.getJob() instanceof Carpenter){
+
+            }else{
+
+            }
+        }else if(job instanceof Clothier){
+            if(p.getJob() instanceof Farmer){
+
+            }else if(p.getJob() instanceof Butcher){
+
+            }else if(p.getJob() instanceof Clothier){
+
+            }else if(p.getJob() instanceof Blacksmith){
+
+            }else if(p.getJob() instanceof Hunter){
+
+            }else{
+
+            }
+        }else if(job instanceof Miner){
+            if(p.getJob() instanceof Farmer){
+
+            }else if(p.getJob() instanceof Butcher){
+
+            }else if(p.getJob() instanceof Clothier){
+
+            }else if(p.getJob() instanceof Blacksmith){
+
+            }else if(p.getJob() instanceof Carpenter){
+
+            }
+        }else if(job instanceof Blacksmith){
+            if(p.getJob() instanceof Farmer){
+
+            }else if(p.getJob() instanceof Butcher){
+
+            }else if(p.getJob() instanceof Clothier){
+
+            }else if(p.getJob() instanceof Blacksmith){
+
+            }else if(p.getJob() instanceof Carpenter){
+
+            }
+        }else if(job instanceof Lumberjack){
+            if(p.getJob() instanceof Farmer){
+
+            }else if(p.getJob() instanceof Butcher){
+
+            }else if(p.getJob() instanceof Clothier){
+
+            }
+        }else{
+            if(p.getJob() instanceof Farmer){
+
+            }else if(p.getJob() instanceof Butcher){
+
+            }else if(p.getJob() instanceof Clothier){
+
+            }
+        }
     }
 
     public void setRelationship(Person p, int change){
@@ -433,30 +727,38 @@ public class Person {
 
     public HairStyle getRandomHairStyles(){
         Random rng = new Random();
-        return hairStyleAlleles[rng.nextInt(2)];
+        return hairStyleAlleles[Randomizer.getRandom(2)];
     }
 
     public HairColor getRandomHairColors(){
         Random rng = new Random();
-        return hairColorAlleles[rng.nextInt(2)];
+        return hairColorAlleles[Randomizer.getRandom(2)];
     }
 
     public EyeColor getRandomEyeColors(){
         Random rng = new Random();
-        return eyeAlleles[rng.nextInt(2)];
+        return eyeAlleles[Randomizer.getRandom(2)];
     }
 
     public SkinColor getRandomSkinColors(){
         Random rng = new Random();
-        return skinAlleles[rng.nextInt(2)];
+        return skinAlleles[Randomizer.getRandom(2)];
     }
 
     public Job getJob(){
         return job;
     }
 
+    public int getCompetence(){
+        return competence;
+    }
+
+    public int getParanoid() {
+        return paranoid;
+    }
+
     public void pickJob(){
-        job = JobBuilder.newWorker();
+        job = JobBuilder.newWorker(inventory);
     }
 
     public String toString(){
@@ -528,7 +830,13 @@ public class Person {
             }
             s += "\n";
         }
+        s += "Health: " + health + "\n";
         s += "Wealth: " + wealth;
+        s += "\n" +
+                "Competence: " + competence + ", Paranoia: " + paranoid;
+        if(age >= 16){
+            s += "\n" + job;
+        }
         return s;
     }
 

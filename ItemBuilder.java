@@ -4,10 +4,10 @@ public class ItemBuilder {
         Item i;
         switch(s){
             case "Carrot":
-                i = new Food(s, 3, 1);
+                i = new Food(s, 1, 1);
                 break;
             case "Potato":
-                i = new Food(s, 5, 1);
+                i = new Food(s, 5, 3);
                 break;
             case "Bread":
                 i = new Food(s, 15, 10);
@@ -16,7 +16,7 @@ public class ItemBuilder {
                 i = new Food(s, 20, 4);
                 break;
             case "Milk":
-                i = new Food(s, 8, 8);
+                i = new Food(s, 8, 4);
                 break;
             case "Wheat":
                 i = new Consumable(s, 1, n);
@@ -43,52 +43,52 @@ public class ItemBuilder {
                 i = new Consumable(s, 10, n);
                 break;
             case "Bow":
-                i = new Tool(s,200, 260 + Randomizer.getRandom(201));
+                i = new Tool(s,200, 130 + Randomizer.getRandom(101));
                 break;
             case "Knife":
-                i = new Tool(s, 50, 130 + Randomizer.getRandom(101));
+                i = new Tool(s, 50, 60 + Randomizer.getRandom(41));
                 break;
             case "Axe":
-                i = new Tool(s, 100, 260 + Randomizer.getRandom(201));
+                i = new Tool(s, 100, 130 + Randomizer.getRandom(101));
                 break;
             case "Pickaxe":
-                i = new Tool(s, 70, 520 + Randomizer.getRandom(401));
+                i = new Tool(s, 70, 260 + Randomizer.getRandom(201));
                 break;
             case "Bucket":
-                i = new Tool(s, 10, 1300 + Randomizer.getRandom(1001));
-                break;
-            case "Cart":
-                i = new Tool(s, 500, 2600 + Randomizer.getRandom(2001));
-                break;
-            case "Plow":
-                i = new Tool(s, 200, 2600 + Randomizer.getRandom(2001));
-                break;
-            case "Shovel":
                 i = new Tool(s, 10, 520 + Randomizer.getRandom(401));
                 break;
+            case "Cart":
+                i = new Tool(s, 500, 1300 + Randomizer.getRandom(1001));
+                break;
+            case "Plow":
+                i = new Tool(s, 200, 1300 + Randomizer.getRandom(1001));
+                break;
+            case "Shovel":
+                i = new Tool(s, 10, 260 + Randomizer.getRandom(201));
+                break;
             case "Clothes":
-                i = new Tool(s, 50, 130 + Randomizer.getRandom(101));
+                i = new Tool(s, 50, 60 + Randomizer.getRandom(41));
                 break;
             case "Pack":
-                i = new Tool(s, 30, 1800 + Randomizer.getRandom(1001));
+                i = new Tool(s, 30, 520 + Randomizer.getRandom(401));
                 break;
             case "Cutting Board":
-                i = new Tool(s, 20, 520 + Randomizer.getRandom(401));
-                break;
-            case "Shears":
-                i = new Tool(s, 15, 260 + Randomizer.getRandom(201));
-                break;
-            case "Hammer":
                 i = new Tool(s, 20, 260 + Randomizer.getRandom(201));
                 break;
+            case "Shears":
+                i = new Tool(s, 15, 130 + Randomizer.getRandom(101));
+                break;
+            case "Hammer":
+                i = new Tool(s, 20, 130 + Randomizer.getRandom(101));
+                break;
             case "Cow":
-                i = new Animal(s, 2000, 5200 + Randomizer.getRandom(4001), 1, 180, 200);
+                i = new Animal(s, 2000, 2600 + Randomizer.getRandom(2001), 1, 1440, 200);
                 break;
             case "Pig":
-                i = new Animal(s, 200, 1800 + Randomizer.getRandom(1001), 2 + Randomizer.getRandom(9), 90, 50);
+                i = new Animal(s, 200, 520 + Randomizer.getRandom(401), 1 + Randomizer.getRandom(2), 1440, 50);
                 break;
             case "Sheep":
-                i = new Animal(s, 500, 2600 + Randomizer.getRandom(2001), 1 + Randomizer.getRandom(5), 360, 30);
+                i = new Animal(s, 500, 1300 + Randomizer.getRandom(1001), 1, 720, 30);
                 break;
             default:
                 i = null;
