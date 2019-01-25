@@ -3,7 +3,7 @@ import java.util.ArrayList;
 public class JobBuilder {
 
     public static Job newWorker(ArrayList<Item> inven){
-        int job = Randomizer.getRandom(2);
+        /*int job = Randomizer.getRandom(2);
         Job j;
         switch (job){
             case 0:
@@ -12,13 +12,14 @@ public class JobBuilder {
             default:
                 j = new Hunter();
                 break;
-        }
+        }*/
+        Job j = new Farmer();
         j.initialInventory(inven);
         return j;
     }
 
     public static Job firstWorker(ArrayList<Item> inven){
-        int job = Randomizer.getRandom(2);
+        /*int job = Randomizer.getRandom(2);
         Job j;
         switch (job){
             case 0:
@@ -27,7 +28,8 @@ public class JobBuilder {
             default:
                 j = new Hunter();
                 break;
-        }
+        }*/
+        Job j = new Farmer();
         j.initialInventory(inven);
         return j;
     }
