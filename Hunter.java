@@ -29,7 +29,7 @@ public class Hunter extends Job {
     }
 
     @Override
-    public void work(ArrayList<Item> inven, int intel){
+    public int work(ArrayList<Item> inven, int intel, int food){
         for(int i = 0; i < intel; i++) {
             int work = Randomizer.getRandom(30);
             if (work == 0) {
@@ -38,18 +38,22 @@ public class Hunter extends Job {
                 huntRabbits(inven);
             }
         }
+        return food;
     }
 
     @Override
     public void initialInventory(ArrayList<Item> inven){
-        inven.add(0, ItemBuilder.newItem("Arrow", 100));
+        inven.add(0, ItemBuilder.newItem("Arrow", 10000));
         arrows = 100;
         hasArrows = true;
         inven.add(1, ItemBuilder.newItem("Raw Meat", 0));
         inven.add(2, ItemBuilder.newItem("Skin", 0));
         inven.add(ItemBuilder.newItem("Bow", 0));
         inven.add(ItemBuilder.newItem("Bow", 0));
-        bows += 2;
+        inven.add(ItemBuilder.newItem("Bow", 0));
+        inven.add(ItemBuilder.newItem("Bow", 0));
+        inven.add(ItemBuilder.newItem("Bow", 0));
+        bows += 5;
         hasBow = true;
         inven.add(ItemBuilder.newItem("Knife", 0));
         inven.add(ItemBuilder.newItem("Knife", 0));
@@ -208,7 +212,7 @@ public class Hunter extends Job {
     public String toString(){
         String s = "Job: Hunter\n";
         s += "Bows: " + bows + ", Knives: " + knives + ", Packs: " + packs + ", Arrows: " + arrows;
-        s += "\nMilk: " + milk + ", Carrots: " + carrot + ", Potatoes: " + potato + ", Meat: " + meat;
+        s += "\nMilk: " + milk + ", Carrots: " + carrot + ", Potatoes: " + potato + ", Meat: " + meat + ", Bread: " + bread;
         s += "\nRaw Meat: " + rawMeat + ", Skins: " + skins;
         return s;
     }

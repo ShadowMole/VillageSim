@@ -5,6 +5,7 @@ public class Driver {
     private static BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
     private static int counter;
     private static int[][] stats;
+    private static ArrayList<String> events;
 
     public static void main(String[] args){
         boolean replay = true;
@@ -30,13 +31,13 @@ public class Driver {
         boolean replay;
         switch(command){
             case 1:
-                stats = new int[][]{{0,0},{0,0,0},{0,0,0,0,0,0,0},{0,0,0},{0,0,0,0}};
+                stats = new int[][]{{0,0},{0,0,0},{0,0,0,0,0,0,0},{0,0,0},{0,0,0,0},{0,0,0,0,0,0,0,0,0},{0}};
                 runControlledSim();
                 replay = true;
                 break;
 
             case 2:
-                stats = new int[][]{{0,0},{0,0,0},{0,0,0,0,0,0,0},{0,0,0},{0,0,0,0}};
+                stats = new int[][]{{0,0},{0,0,0},{0,0,0,0,0,0,0},{0,0,0},{0,0,0,0},{0,0,0,0,0,0,0,0,0},{0}};
                 runUncontrolledSim();
                 replay = true;
                 break;
@@ -63,6 +64,7 @@ public class Driver {
             people.add(PersonBuilder.createPerson());
         }
         counter = 0;
+        events = new ArrayList<>();
         boolean next = true;
         boolean continueSim = true;
         do {
@@ -80,15 +82,16 @@ public class Driver {
     }
 
     public static void runUncontrolledSim(){
-        int days = 72000;
+        int days = 360000;
         System.out.println("Welcome to the uncontrolled simulation!!! \nYou are about to witness " + (days / 360) + " years of history." +
                 "\nHopefully your computer can handle it because who knows what may happen.");
         ArrayList<Person> people = new ArrayList<>();
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 200; i++) {
             people.add(PersonBuilder.createPerson());
         }
         counter = 0;
-        runSim(days, people, true);
+        events = new ArrayList<>();
+        runSim(days, people, true, events);
         printPeople(people);
         printStatistics(people);
     }
@@ -97,22 +100,22 @@ public class Driver {
         boolean continueSim;
         switch (command){
             case 1:
-                runSim(1, people, false);
+                runSim(1, people, false, events);
                 continueSim = true;
                 break;
 
             case 2:
-                runSim(7, people, false);
+                runSim(7, people, false, events);
                 continueSim = true;
                 break;
 
             case 3:
-                runSim(30, people, false);
+                runSim(30, people, false, events);
                 continueSim = true;
                 break;
 
             case 4:
-                runSim(360, people, false);
+                runSim(360, people, false, events);
                 continueSim = true;
                 break;
 
@@ -138,17 +141,24 @@ public class Driver {
         return continueSim;
     }
 
-    public static void runSim(int days, ArrayList<Person> people, boolean uncontrolled){
+    public static void runSim(int days, ArrayList<Person> people, boolean uncontrolled, ArrayList<String> events){
         for(int i = 0; i < days; i++){
             if(uncontrolled && i % 360 == 0){
                 System.out.println("Year: " + (i / 360) + ", Population: " + people.size());
             }
             for(int j = 0; j < people.size(); j++){
-                people.get(j).act(people, counter);
+                people.get(j).act(people, counter, events);
                 if(!people.get(j).isAlive()){
                     people.remove(j);
                     j--;
                 }
+            }
+            if(!events.isEmpty()){
+                System.out.println("Year: " + (counter / 360) + "    Month: " + ((counter % 360) / 30) + "    Day: " + (counter % 30));
+                for(String s : events){
+                    System.out.println(s);
+                }
+                events.removeAll(events);
             }
             counter++;
         }
@@ -168,6 +178,8 @@ public class Driver {
         System.out.println("\nHair Color:\nBlack: " + stats[2][0] + "\nBrown: " + stats[2][1] + "\nBlond: " + stats[2][2] + "\nRed: " + stats[2][3] + "\nGinger: " + stats[2][4] + "\nLight Brown: " + stats[2][5] + "\nDirty Blond: " + stats[2][6]);
         System.out.println("\nHair Style:\nStraight: " + stats[3][0] + "\nCurly: " + stats[3][1] + "\nWavy: " + stats[3][2]);
         System.out.println("\nEye Color:\nBrown: " + stats[4][0] + "\nHazel: " + stats[4][1] + "\nBlue: " + stats[4][2] + "\nGreen: " + stats[4][3]);
+        System.out.println("\nJob:\nFarmer: " + stats[5][0] + "\nHunter: " + stats[5][1] + "\nButcher: " + stats[5][2] + "\nBaker: " + stats[5][3]);
+        System.out.println("\n\nMurders: " + stats[6][0]);
     }
 
     public static void updateStatistics(String gender, String skin, String hairC, String hairS, String eye){
@@ -256,6 +268,30 @@ public class Driver {
                 stats[4][3]++;
                 break;
         }
+    }
+
+    public static void updateJobs(String job){
+        switch (job){
+            case "Farmer":
+                stats[5][0]++;
+                break;
+
+            case "Hunter":
+                stats[5][1]++;
+                break;
+
+            case "Butcher":
+                stats[5][2]++;
+                break;
+
+            case "Baker":
+                stats[5][3]++;
+                break;
+        }
+    }
+
+    public static void updateMurders(){
+        stats[6][0]++;
     }
 
     public static void printMainMenu(){

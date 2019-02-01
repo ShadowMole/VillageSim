@@ -20,14 +20,21 @@ public class Butcher extends Job {
     }
 
     @Override
-    public void work(ArrayList<Item> inven, int intel){
+    public int work(ArrayList<Item> inven, int intel, int food){
+        rawMeat = ((Consumable) inven.get(0)).getNumber();
+        if(rawMeat == 0){
+            hasRawMeat = false;
+        }else{
+            hasRawMeat = true;
+        }
         for(int j = 0; j < intel; j++){
             if(hasBoard && hasKnife && hasRawMeat){
                 inven.add(ItemBuilder.newItem("Meat", 0));
                 meat++;
+                food += 4;
                 ((Consumable) inven.get(0)).use(1);
                 rawMeat = ((Consumable) inven.get(0)).getNumber();
-                if(rawMeat == 0){
+                    if(rawMeat == 0){
                     hasRawMeat = false;
                 }else{
                     hasRawMeat = true;
@@ -69,6 +76,7 @@ public class Butcher extends Job {
                 }
             }
         }
+        return food;
     }
 
     @Override
@@ -94,7 +102,7 @@ public class Butcher extends Job {
     public String toString(){
         String s = "Job: Butcher\n";
         s += "Knives: " + knives + ", Cutting Boards: " + boards;
-        s += "\nMilk: " + milk + ", Carrots: " + carrot + ", Potatoes: " + potato + ", Meat: " + meat;
+        s += "\nMilk: " + milk + ", Carrots: " + carrot + ", Potatoes: " + potato + ", Meat: " + meat + ", Bread: " + bread;
         s += "\nRaw Meat: " + rawMeat;
         return s;
     }

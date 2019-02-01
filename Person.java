@@ -147,7 +147,7 @@ public class Person {
         Driver.updateStatistics(genderS, skin, hairC, hairS, eye);
     }
 
-    public void act(ArrayList<Person> others, int counter){
+    public void act(ArrayList<Person> others, int counter, ArrayList<String> events){
         if((counter - birthday) % 360 == 0){
             age++;
             if(age == 16){
@@ -155,7 +155,18 @@ public class Person {
             }
         }
         if(age >= 16){
-            job.work(inventory, competence);
+            if(counter % 7 == 0 && wealth > children.size() + 50){
+                for(int i = 0; i < children.size(); i++){
+                    if(children.get(i).isAlive() && children.get(i).getAge() < 16){
+                        children.get(i).sellItem(1);
+                        buyItem(1);
+                    }
+                }
+            }
+            if(counter % 1800 == 0){
+                sellItem(100);
+            }
+            totalFood = job.work(inventory, competence, totalFood);
             eat();
 
             if(gender == Gender.FEMALE){
@@ -169,9 +180,9 @@ public class Person {
                 }
                 if(isPregnant){
                     if(pregnancy == 0){
-                        others.add(PersonBuilder.newPerson(this, spouse, counter));
+                        others.add(PersonBuilder.newPerson(this, spouse, counter, events));
                         if(Randomizer.getRandom(88) < 1){
-                            others.add(PersonBuilder.newPerson(this, spouse, counter));
+                            others.add(PersonBuilder.newPerson(this, spouse, counter, events));
                         }
                         isPregnant = false;
                     }else{
@@ -204,6 +215,11 @@ public class Person {
                                 change += 5;
                             }else{
                                 change += 10;
+                            }
+                        }else{
+                            if(trade(interact)){
+                                change += 50;
+                                //events.add(firstName + " " + lastName + " has traded with " + interact.getFirstName() + " " + interact.getLastName() + ".");
                             }
                         }
                         if(otherGender(interact)){
@@ -242,8 +258,9 @@ public class Person {
                         married = true;
                         spouse = interact;
                         interact.setMarried(this);
+                        events.add(firstName + " " + lastName + " has married " + interact.getFirstName() + " " + interact.getLastName() + ".");
                     }
-                    if(relationships.get(interact) < 100 && Randomizer.getRandom(1500) < relationships.get(interact)){
+                    if(relationships.get(interact) < 100 && Randomizer.getRandom(1500) < (100 - relationships.get(interact))){
                         if(Randomizer.getRandom(3) == 0){
                             setDead();
                             for(Person p : relationships.keySet()){
@@ -251,8 +268,20 @@ public class Person {
                                     interact.setRelationship(p, - 500);
                                 }
                             }
-                            System.out.println(interact.getFirstName() + " " + interact.getLastName() + " has killed " + firstName + " " + lastName + " in self defense.");
-
+                            events.add(interact.getFirstName() + " " + interact.getLastName() + " has killed " + firstName + " " + lastName + " in self defense.");
+                            Driver.updateMurders();
+                            int numChild = 0;
+                            for(int j = 0; j < children.size(); j++){
+                                if(children.get(j).isAlive()){
+                                    numChild++;
+                                }
+                            }
+                            for(int j = 0; j < children.size(); j++){
+                                if(children.get(j).isAlive()){
+                                    children.get(j).sellItem(wealth / numChild);
+                                }
+                            }
+                            return;
                         }else{
                             interact.setDead();
                             for(Person p : interact.getRelationships().keySet()){
@@ -260,8 +289,20 @@ public class Person {
                                     setRelationship(p, - 500);
                                 }
                             }
-                            System.out.println(firstName + " " + lastName + " has murdered " + interact.getFirstName() + " " + interact.getLastName() + ".");
+                            events.add(firstName + " " + lastName + " has murdered " + interact.getFirstName() + " " + interact.getLastName() + ".");
+                            int numChild = 0;
+                            for(int j = 0; j < interact.getChildren().size(); j++){
+                                if(interact.getChildren().get(j).isAlive()){
+                                    numChild++;
+                                }
+                            }
+                            for(int j = 0; j < interact.getChildren().size(); j++){
+                                if(interact.getChildren().get(j).isAlive()){
+                                    interact.getChildren().get(j).sellItem(interact.getWealth() / numChild);
+                                }
+                            }
                         }
+                        Driver.updateMurders();
                     }
                 }
             }
@@ -275,15 +316,26 @@ public class Person {
         if(health <= 0 || Randomizer.getRandom(500000) < age){
             alive = false;
             if(health <= 0){
-                System.out.println(firstName + " " + lastName + " has died due to starvation.");
+                events.add(firstName + " " + lastName + " has died due to starvation.");
             }else{
-                System.out.println(firstName + " " + lastName + " has died due to disease.");
+                events.add(firstName + " " + lastName + " has died due to disease.");
+            }
+            int numChild = 0;
+            for(int i = 0; i < children.size(); i++){
+                if(children.get(i).isAlive()){
+                    numChild++;
+                }
+            }
+            for(int i = 0; i < children.size(); i++){
+                if(children.get(i).isAlive()){
+                    children.get(i).sellItem(wealth / numChild);
+                }
             }
         }
     }
 
     public void eat(){
-        int eat = 9;
+        int eat = 6;
         Iterator<Item> it = inventory.iterator();
         while (eat > 0 && it.hasNext()) {
             Item j = it.next();
@@ -291,25 +343,31 @@ public class Person {
                eat = ((Food) j).eat(eat);
                if(eat > 0){
                    it.remove();
-                   if(job instanceof Farmer && j.getName().equals("Milk")){
-                       ((Farmer) job).eatMilk();
-                   }else if(job instanceof Farmer && j.getName().equals("Carrot")){
-                       ((Farmer) job).eatCarrot();
-                   }else if(job instanceof Farmer && j.getName().equals("Potato")){
-                       ((Farmer) job).eatPotato();
+                   if(j.getName().equals("Milk")){
+                       job.eatMilk();
+                   }else if(j.getName().equals("Carrot")){
+                       job.eatCarrot();
+                   }else if(j.getName().equals("Potato")){
+                       job.eatPotato();
+                   }else if(j.getName().equals("Meat")){
+                       job.eatMeat();
+                   }else{
+                       job.eatBread();
                    }
                }
             }
         }
         if(eat == 0){
             health += 1;
+            totalFood -= 6;
         }else{
             health -= eat * 2;
+            totalFood -= eat;
         }
     }
 
     public int childEat(){
-        int eat = 6;
+        int eat = 3;
         Iterator<Item> it = inventory.iterator();
         while (eat > 0 && it.hasNext()) {
             Item j = it.next();
@@ -317,15 +375,24 @@ public class Person {
                 eat = ((Food) j).eat(eat);
                 if(eat > 0){
                     it.remove();
-                    if(job instanceof Farmer && j.getName().equals("Milk")){
-                        ((Farmer) job).eatMilk();
-                    }else if(job instanceof Farmer && j.getName().equals("Carrot")){
-                        ((Farmer) job).eatCarrot();
-                    }else if(job instanceof Farmer && j.getName().equals("Potato")){
-                        ((Farmer) job).eatPotato();
+                    if(j.getName().equals("Milk")){
+                        job.eatMilk();
+                    }else if(j.getName().equals("Carrot")){
+                        job.eatCarrot();
+                    }else if(j.getName().equals("Potato")){
+                        job.eatPotato();
+                    }else if(j.getName().equals("Meat")){
+                        job.eatMeat();
+                    }else{
+                        job.eatBread();
                     }
                 }
             }
+        }
+        if(eat == 0){
+            totalFood -= 3;
+        }else{
+            totalFood -= eat;
         }
         return eat;
     }
@@ -348,7 +415,7 @@ public class Person {
         if(eat == 0){
             health += 1;
         }else{
-            health -= eat * 3;
+            health -= eat * 2;
         }
     }
 
@@ -422,7 +489,7 @@ public class Person {
         return false;
     }
     
-    public void interact(ArrayList<Person> others){
+    public void interact(ArrayList<Person> others, ArrayList<String> events){
         if(age >= 16){
             int interactWith = Randomizer.getRandom(20) + 5;
             for(int i = 0; i < interactWith; i++) {
@@ -485,6 +552,11 @@ public class Person {
                         married = true;
                         spouse = interact;
                         interact.setMarried(this);
+                        for(Person p : interact.getRelationships().keySet()){
+                            if(!(p.equals(this)) && !(interact.isFamily(p)) && interact.getGender() != p.getGender() && !(p.isMarried()) && p.getAge() > 12){
+                                p.setRelationship(this, -300);
+                            }
+                        }
                     }
                     if (relationships.get(interact) < 100 && Randomizer.getRandom(1500) < relationships.get(interact)) {
                         if (Randomizer.getRandom(3) == 0) {
@@ -494,7 +566,7 @@ public class Person {
                                     p.setRelationship(interact, -500);
                                 }
                             }
-                            System.out.println(interact.getFirstName() + " " + interact.getLastName() + " has killed " + firstName + " " + lastName + " in self defense.");
+                            events.add(interact.getFirstName() + " " + interact.getLastName() + " has killed " + firstName + " " + lastName + " in self defense.");
 
                         } else {
                             interact.setDead();
@@ -503,7 +575,7 @@ public class Person {
                                     p.setRelationship(this, -500);
                                 }
                             }
-                            System.out.println(firstName + " " + lastName + " has murdered " + interact.getFirstName() + " " + interact.getLastName() + ".");
+                            events.add(firstName + " " + lastName + " has murdered " + interact.getFirstName() + " " + interact.getLastName() + ".");
                         }
                     }
                 }
@@ -513,118 +585,1284 @@ public class Person {
         }
     }
 
-    public void trade(Person p){
-        if(job instanceof Farmer){
-            if(p.getJob() instanceof Farmer){
-
-            }else if(p.getJob() instanceof Butcher){
-
+    public boolean trade(Person p) {
+        boolean trade = false;
+        int goldSpent = 0;
+        int goldEarned = 0;
+        if (job instanceof Farmer) {
+            if (p.getJob() instanceof Farmer) {
+                if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                    Iterator<Item> it = inventory.iterator();
+                    while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                        Item j = it.next();
+                        if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                            if (j.getPrice() < p.getWealth()) {
+                                p.getInventory().add(j);
+                                it.remove();
+                                if (j.getName().equals("Milk")) {
+                                    job.eatMilk();
+                                    p.getJob().newMilk();
+                                } else if (j.getName().equals("Carrot")) {
+                                    job.eatCarrot();
+                                    p.getJob().newCarrot();
+                                } else if (j.getName().equals("Potato")) {
+                                    job.eatPotato();
+                                    p.getJob().newPotato();
+                                }
+                                p.addFood(((Food) j).getFood());
+                                totalFood -= ((Food) j).getFood();
+                                goldEarned += j.getPrice();
+                                sellItem(j.getPrice());
+                                p.buyItem(j.getPrice());
+                                trade = true;
+                            }
+                        }
+                    }
+                } else if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                    Iterator<Item> it = p.getInventory().iterator();
+                    while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                        Item j = it.next();
+                        if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                            if (j.getPrice() < wealth) {
+                                inventory.add(j);
+                                it.remove();
+                                if (j.getName().equals("Milk")) {
+                                    p.getJob().eatMilk();
+                                    job.newMilk();
+                                } else if (j.getName().equals("Carrot")) {
+                                    p.getJob().eatCarrot();
+                                    job.newCarrot();
+                                } else if (j.getName().equals("Potato")) {
+                                    p.getJob().eatPotato();
+                                    job.newPotato();
+                                }
+                                totalFood += ((Food) j).getFood();
+                                p.loseFood(((Food) j).getFood());
+                                goldSpent += j.getPrice();
+                                buyItem(j.getPrice());
+                                p.sellItem(j.getPrice());
+                                trade = true;
+                            }
+                        }
+                    }
+                }
+            } else if (p.getJob() instanceof Butcher) {
+                if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                    Iterator<Item> it = inventory.iterator();
+                    while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                        Item j = it.next();
+                        if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                            if (j.getPrice() < p.getWealth()) {
+                                p.getInventory().add(j);
+                                it.remove();
+                                if (j.getName().equals("Milk")) {
+                                    job.eatMilk();
+                                    p.getJob().newMilk();
+                                } else if (j.getName().equals("Carrot")) {
+                                    job.eatCarrot();
+                                    p.getJob().newCarrot();
+                                } else if (j.getName().equals("Potato")) {
+                                    job.eatPotato();
+                                    p.getJob().newPotato();
+                                }
+                                p.addFood(((Food) j).getFood());
+                                totalFood -= ((Food) j).getFood();
+                                goldEarned += j.getPrice();
+                                sellItem(j.getPrice());
+                                p.buyItem(j.getPrice());
+                                trade = true;
+                            }
+                        }
+                    }
+                } else if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                    Iterator<Item> it = p.getInventory().iterator();
+                    while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                        Item j = it.next();
+                        if (j instanceof Food && j.getName().equals("Meat")) {
+                            if (j.getPrice() < wealth) {
+                                inventory.add(j);
+                                it.remove();
+                                p.getJob().eatMeat();
+                                job.newMeat();
+                                totalFood += ((Food) j).getFood();
+                                p.loseFood(((Food) j).getFood());
+                                goldSpent += j.getPrice();
+                                buyItem(j.getPrice());
+                                p.sellItem(j.getPrice());
+                                trade = true;
+                            }
+                        }
+                    }
+                }
+                int raw = ((Consumable) inventory.get(0)).getNumber();
+                if(raw > 0){
+                    int willing = (p.getWealth() / 2) / (inventory.get(0).getPrice() * raw);
+                    if(willing > 0) {
+                        if (willing >= raw && (raw * inventory.get(0).getPrice()) < p.getWealth()) {
+                            ((Consumable) inventory.get(0)).use(raw);
+                            ((Consumable) p.getInventory().get(0)).addMore(raw);
+                            goldEarned += inventory.get(0).getPrice() * raw;
+                            sellItem(inventory.get(0).getPrice() * raw);
+                            p.buyItem(inventory.get(0).getPrice() * raw);
+                            trade = true;
+                        } else if((willing * inventory.get(0).getPrice()) < p.getWealth()) {
+                            ((Consumable) inventory.get(0)).use(willing);
+                            ((Consumable) p.getInventory().get(0)).addMore(willing);
+                            goldEarned += inventory.get(0).getPrice() * willing;
+                            sellItem(inventory.get(0).getPrice() * willing);
+                            p.buyItem(inventory.get(0).getPrice() * willing);
+                            trade = true;
+                        }
+                    }
+                }
+            } else if (p.getJob() instanceof Baker) {
+                if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                    Iterator<Item> it = inventory.iterator();
+                    while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                        Item j = it.next();
+                        if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                            if (j.getPrice() < p.getWealth()) {
+                                p.getInventory().add(j);
+                                it.remove();
+                                if (j.getName().equals("Milk")) {
+                                    job.eatMilk();
+                                    p.getJob().newMilk();
+                                } else if (j.getName().equals("Carrot")) {
+                                    job.eatCarrot();
+                                    p.getJob().newCarrot();
+                                } else if (j.getName().equals("Potato")) {
+                                    job.eatPotato();
+                                    p.getJob().newPotato();
+                                }
+                                p.addFood(((Food) j).getFood());
+                                totalFood -= ((Food) j).getFood();
+                                goldEarned += j.getPrice();
+                                sellItem(j.getPrice());
+                                p.buyItem(j.getPrice());
+                                trade = true;
+                            }
+                        }
+                    }
+                } else if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                    Iterator<Item> it = p.getInventory().iterator();
+                    while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                        Item j = it.next();
+                        if (j instanceof Food && j.getName().equals("Bread")) {
+                            if (j.getPrice() < wealth) {
+                                inventory.add(j);
+                                it.remove();
+                                p.getJob().eatBread();
+                                job.newBread();
+                                totalFood += ((Food) j).getFood();
+                                p.loseFood(((Food) j).getFood());
+                                goldSpent += j.getPrice();
+                                buyItem(j.getPrice());
+                                p.sellItem(j.getPrice());
+                                trade = true;
+                            }
+                        }
+                    }
+                }
+                int raw = ((Consumable) inventory.get(1)).getNumber();
+                if(raw > 0){
+                    int willing = (p.getWealth() / 2) / (inventory.get(1).getPrice() * raw);
+                    if(willing > 0) {
+                        if (willing >= raw && (raw * inventory.get(1).getPrice()) < p.getWealth()) {
+                            ((Consumable) inventory.get(1)).use(raw);
+                            ((Consumable) p.getInventory().get(0)).addMore(raw);
+                            goldEarned += inventory.get(1).getPrice() * raw;
+                            sellItem(inventory.get(1).getPrice() * raw);
+                            p.buyItem(inventory.get(1).getPrice() * raw);
+                            trade = true;
+                        } else if((willing * inventory.get(1).getPrice()) < p.getWealth()) {
+                            ((Consumable) inventory.get(1)).use(willing);
+                            ((Consumable) p.getInventory().get(0)).addMore(willing);
+                            goldEarned += inventory.get(1).getPrice() * willing;
+                            sellItem(inventory.get(1).getPrice() * willing);
+                            p.buyItem(inventory.get(1).getPrice() * willing);
+                            trade = true;
+                        }
+                    }
+                }
+            } else if (p.getJob() instanceof Blacksmith) {
+                if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                    Iterator<Item> it = inventory.iterator();
+                    while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                        Item j = it.next();
+                        if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                            if (j.getPrice() < p.getWealth()) {
+                                p.getInventory().add(j);
+                                it.remove();
+                                if (j.getName().equals("Milk")) {
+                                    job.eatMilk();
+                                    p.getJob().newMilk();
+                                } else if (j.getName().equals("Carrot")) {
+                                    job.eatCarrot();
+                                    p.getJob().newCarrot();
+                                } else if (j.getName().equals("Potato")) {
+                                    job.eatPotato();
+                                    p.getJob().newPotato();
+                                }
+                                p.addFood(((Food) j).getFood());
+                                totalFood -= ((Food) j).getFood();
+                                goldEarned += j.getPrice();
+                                sellItem(j.getPrice());
+                                p.buyItem(j.getPrice());
+                                trade = true;
+                            }
+                        }
+                    }
+                }
+            } else if (p.getJob() instanceof Carpenter) {
+                if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                    Iterator<Item> it = inventory.iterator();
+                    while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                        Item j = it.next();
+                        if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                            if (j.getPrice() < p.getWealth()) {
+                                p.getInventory().add(j);
+                                it.remove();
+                                if (j.getName().equals("Milk")) {
+                                    job.eatMilk();
+                                    p.getJob().newMilk();
+                                } else if (j.getName().equals("Carrot")) {
+                                    job.eatCarrot();
+                                    p.getJob().newCarrot();
+                                } else if (j.getName().equals("Potato")) {
+                                    job.eatPotato();
+                                    p.getJob().newPotato();
+                                }
+                                p.addFood(((Food) j).getFood());
+                                totalFood -= ((Food) j).getFood();
+                                goldEarned += j.getPrice();
+                                sellItem(j.getPrice());
+                                p.buyItem(j.getPrice());
+                                trade = true;
+                            }
+                        }
+                    }
+                }
+            } else if (p.getJob() instanceof Clothier) {
+                if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                    Iterator<Item> it = inventory.iterator();
+                    while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                        Item j = it.next();
+                        if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                            if (j.getPrice() < p.getWealth()) {
+                                p.getInventory().add(j);
+                                it.remove();
+                                if (j.getName().equals("Milk")) {
+                                    job.eatMilk();
+                                    p.getJob().newMilk();
+                                } else if (j.getName().equals("Carrot")) {
+                                    job.eatCarrot();
+                                    p.getJob().newCarrot();
+                                } else if (j.getName().equals("Potato")) {
+                                    job.eatPotato();
+                                    p.getJob().newPotato();
+                                }
+                                p.addFood(((Food) j).getFood());
+                                totalFood -= ((Food) j).getFood();
+                                goldEarned += j.getPrice();
+                                sellItem(j.getPrice());
+                                p.buyItem(j.getPrice());
+                                trade = true;
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                    Iterator<Item> it = inventory.iterator();
+                    while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                        Item j = it.next();
+                        if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                            if (j.getPrice() < p.getWealth()) {
+                                p.getInventory().add(j);
+                                it.remove();
+                                if (j.getName().equals("Milk")) {
+                                    job.eatMilk();
+                                    p.getJob().newMilk();
+                                } else if (j.getName().equals("Carrot")) {
+                                    job.eatCarrot();
+                                    p.getJob().newCarrot();
+                                } else if (j.getName().equals("Potato")) {
+                                    job.eatPotato();
+                                    p.getJob().newPotato();
+                                }
+                                p.addFood(((Food) j).getFood());
+                                totalFood -= ((Food) j).getFood();
+                                goldEarned += j.getPrice();
+                                sellItem(j.getPrice());
+                                p.buyItem(j.getPrice());
+                                trade = true;
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (job instanceof Hunter) {
+            if (p.getJob() instanceof Farmer) {
+                if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                    Iterator<Item> it = p.getInventory().iterator();
+                    while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                        Item j = it.next();
+                        if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                            if (j.getPrice() < wealth) {
+                                inventory.add(j);
+                                it.remove();
+                                if (j.getName().equals("Milk")) {
+                                    p.getJob().eatMilk();
+                                    job.newMilk();
+                                } else if (j.getName().equals("Carrot")) {
+                                    p.getJob().eatCarrot();
+                                    job.newCarrot();
+                                } else if (j.getName().equals("Potato")) {
+                                    p.getJob().eatPotato();
+                                    job.newPotato();
+                                }
+                                totalFood += ((Food) j).getFood();
+                                p.loseFood(((Food) j).getFood());
+                                goldSpent += j.getPrice();
+                                buyItem(j.getPrice());
+                                p.sellItem(j.getPrice());
+                                trade = true;
+                            }
+                        }
+                    }
+                }
+            } else if (p.getJob() instanceof Butcher) {
+                if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                    Iterator<Item> it = p.getInventory().iterator();
+                    while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                        Item j = it.next();
+                        if (j instanceof Food && j.getName().equals("Meat")) {
+                            if (j.getPrice() < wealth) {
+                                inventory.add(j);
+                                it.remove();
+                                p.getJob().eatMeat();
+                                job.newMeat();
+                                totalFood += ((Food) j).getFood();
+                                p.loseFood(((Food) j).getFood());
+                                goldSpent += j.getPrice();
+                                buyItem(j.getPrice());
+                                p.sellItem(j.getPrice());
+                                trade = true;
+                            }
+                        }
+                    }
+                }
+                int raw = ((Consumable) inventory.get(1)).getNumber();
+                if(raw > 0){
+                    int willing = (p.getWealth() / 2) / (inventory.get(1).getPrice() * raw);
+                    if(willing > 0) {
+                        if (willing >= raw && (raw * inventory.get(1).getPrice()) < p.getWealth()) {
+                            ((Consumable) inventory.get(1)).use(raw);
+                            ((Consumable) p.getInventory().get(0)).addMore(raw);
+                            goldEarned += inventory.get(1).getPrice() * raw;
+                            sellItem(inventory.get(1).getPrice() * raw);
+                            p.buyItem(inventory.get(1).getPrice() * raw);
+                            trade = true;
+                        } else if((willing * inventory.get(1).getPrice()) < p.getWealth()){
+                            ((Consumable) inventory.get(1)).use(willing);
+                            ((Consumable) p.getInventory().get(0)).addMore(willing);
+                            goldEarned += inventory.get(1).getPrice() * willing;
+                            sellItem(inventory.get(1).getPrice() * willing);
+                            p.buyItem(inventory.get(1).getPrice() * willing);
+                            trade = true;
+                        }
+                    }
+                }
             }else if(p.getJob() instanceof Baker){
+                if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                    Iterator<Item> it = p.getInventory().iterator();
+                    while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                        Item j = it.next();
+                        if (j instanceof Food && j.getName().equals("Bread")) {
+                            if (j.getPrice() < wealth) {
+                                inventory.add(j);
+                                it.remove();
+                                p.getJob().eatBread();
+                                job.newBread();
+                                totalFood += ((Food) j).getFood();
+                                p.loseFood(((Food) j).getFood());
+                                goldSpent += j.getPrice();
+                                buyItem(j.getPrice());
+                                p.sellItem(j.getPrice());
+                                trade = true;
+                            }
+                        }
+                    }
+                }
+            } if (p.getJob() instanceof Clothier) {
 
-            }else if(p.getJob() instanceof Blacksmith){
+            } else if (p.getJob() instanceof Blacksmith) {
 
-            }else if(p.getJob() instanceof Carpenter){
+            } else if (p.getJob() instanceof Carpenter) {
 
-            }else if(p.getJob() instanceof Clothier){
+            } else if (job instanceof Butcher) {
+                if (p.getJob() instanceof Farmer) {
+                    if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                        Iterator<Item> it = inventory.iterator();
+                        while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Meat")) {
+                                if (j.getPrice() < p.getWealth()) {
+                                    p.getInventory().add(j);
+                                    it.remove();
+                                    job.eatMeat();
+                                    p.getJob().newMeat();
+                                    p.addFood(((Food) j).getFood());
+                                    totalFood -= ((Food) j).getFood();
+                                    goldEarned += j.getPrice();
+                                    sellItem(j.getPrice());
+                                    p.buyItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    } else if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    if (j.getName().equals("Milk")) {
+                                        p.getJob().eatMilk();
+                                        job.newMilk();
+                                    } else if (j.getName().equals("Carrot")) {
+                                        p.getJob().eatCarrot();
+                                        job.newCarrot();
+                                    } else if (j.getName().equals("Potato")) {
+                                        p.getJob().eatPotato();
+                                        job.newPotato();
+                                    }
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                    int raw = ((Consumable) p.getInventory().get(0)).getNumber();
+                    if(raw > 0) {
+                        int willing = (wealth / 2) / (p.getInventory().get(0).getPrice() * raw);
+                        if(willing > 0) {
+                            if (willing >= raw && (raw * inventory.get(0).getPrice()) < wealth) {
+                                ((Consumable) p.getInventory().get(0)).use(raw);
+                                ((Consumable) inventory.get(0)).addMore(raw);
+                                goldSpent += p.getInventory().get(0).getPrice() * raw;
+                                buyItem(p.getInventory().get(0).getPrice() * raw);
+                                p.sellItem(p.getInventory().get(0).getPrice() * raw);
+                                trade = true;
+                            } else if((willing * inventory.get(0).getPrice()) < wealth){
+                                ((Consumable) p.getInventory().get(0)).use(willing);
+                                ((Consumable) inventory.get(0)).addMore(willing);
+                                goldSpent += p.getInventory().get(0).getPrice() * willing;
+                                buyItem(p.getInventory().get(0).getPrice() * willing);
+                                p.sellItem(p.getInventory().get(0).getPrice() * willing);
+                                trade = true;
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Butcher) {
+                    if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                        Iterator<Item> it = inventory.iterator();
+                        while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Meat")) {
+                                if (j.getPrice() < p.getWealth()) {
+                                    p.getInventory().add(j);
+                                    it.remove();
+                                    job.eatMeat();
+                                    p.getJob().newMeat();
+                                    p.addFood(((Food) j).getFood());
+                                    totalFood -= ((Food) j).getFood();
+                                    goldEarned += j.getPrice();
+                                    sellItem(j.getPrice());
+                                    p.buyItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    } else if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Meat")) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    p.getJob().eatMeat();
+                                    job.newMeat();
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else if(p.getJob() instanceof Baker){
+                    if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                        Iterator<Item> it = inventory.iterator();
+                        while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Meat")) {
+                                if (j.getPrice() < p.getWealth()) {
+                                    p.getInventory().add(j);
+                                    it.remove();
+                                    job.eatMeat();
+                                    p.getJob().newMeat();
+                                    p.addFood(((Food) j).getFood());
+                                    totalFood -= ((Food) j).getFood();
+                                    goldEarned += j.getPrice();
+                                    sellItem(j.getPrice());
+                                    p.buyItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    } else if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Bread")) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    p.getJob().eatBread();
+                                    job.newBread();
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } if (p.getJob() instanceof Hunter) {
+                    if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                        Iterator<Item> it = inventory.iterator();
+                        while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Meat")) {
+                                if (j.getPrice() < p.getWealth()) {
+                                    p.getInventory().add(j);
+                                    it.remove();
+                                    job.eatMeat();
+                                    p.getJob().newMeat();
+                                    p.addFood(((Food) j).getFood());
+                                    totalFood -= ((Food) j).getFood();
+                                    goldEarned += j.getPrice();
+                                    sellItem(j.getPrice());
+                                    p.buyItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                    int raw = ((Consumable) p.getInventory().get(1)).getNumber();
+                    if(raw > 0) {
+                        int willing = (wealth / 2) / (p.getInventory().get(1).getPrice() * raw);
+                        if(willing > 0) {
+                            if (willing >= raw && (raw * p.getInventory().get(1).getPrice()) < wealth) {
+                                ((Consumable) p.getInventory().get(1)).use(raw);
+                                ((Consumable) inventory.get(0)).addMore(raw);
+                                goldSpent += p.getInventory().get(1).getPrice() * raw;
+                                buyItem(p.getInventory().get(1).getPrice() * raw);
+                                p.sellItem(p.getInventory().get(1).getPrice() * raw);
+                                trade = true;
+                            } else if((willing * p.getInventory().get(1).getPrice()) < wealth){
+                                ((Consumable) p.getInventory().get(1)).use(willing);
+                                ((Consumable) inventory.get(0)).addMore(willing);
+                                goldSpent += p.getInventory().get(1).getPrice() * willing;
+                                buyItem(p.getInventory().get(1).getPrice() * willing);
+                                p.sellItem(p.getInventory().get(1).getPrice() * willing);
+                                trade = true;
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Clothier) {
 
-            }else{
+                } else if (p.getJob() instanceof Blacksmith) {
 
-            }
-        }else if(job instanceof Hunter){
-            if(p.getJob() instanceof Farmer){
+                } else if (p.getJob() instanceof Carpenter) {
 
-            }else if(p.getJob() instanceof Butcher){
+                } else {
+                    if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                        Iterator<Item> it = inventory.iterator();
+                        while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Meat")) {
+                                if (j.getPrice() < p.getWealth()) {
+                                    p.getInventory().add(j);
+                                    it.remove();
+                                    job.eatMeat();
+                                    p.getJob().newMeat();
+                                    p.addFood(((Food) j).getFood());
+                                    totalFood -= ((Food) j).getFood();
+                                    goldEarned += j.getPrice();
+                                    sellItem(j.getPrice());
+                                    p.buyItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if (job instanceof Baker) {
+                if (p.getJob() instanceof Farmer) {
+                    if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                        Iterator<Item> it = inventory.iterator();
+                        while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Bread")) {
+                                if (j.getPrice() < p.getWealth()) {
+                                    p.getInventory().add(j);
+                                    it.remove();
+                                    job.eatBread();
+                                    p.getJob().newBread();
+                                    p.addFood(((Food) j).getFood());
+                                    totalFood -= ((Food) j).getFood();
+                                    goldEarned += j.getPrice();
+                                    sellItem(j.getPrice());
+                                    p.buyItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    } else if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    if (j.getName().equals("Milk")) {
+                                        p.getJob().eatMilk();
+                                        job.newMilk();
+                                    } else if (j.getName().equals("Carrot")) {
+                                        p.getJob().eatCarrot();
+                                        job.newCarrot();
+                                    } else if (j.getName().equals("Potato")) {
+                                        p.getJob().eatPotato();
+                                        job.newPotato();
+                                    }
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                    int raw = ((Consumable) p.getInventory().get(1)).getNumber();
+                    if(raw > 0) {
+                        int willing = (wealth / 2) / (p.getInventory().get(1).getPrice() * raw);
+                        if(willing > 0) {
+                            if (willing >= raw && (raw * inventory.get(0).getPrice()) < wealth) {
+                                ((Consumable) p.getInventory().get(1)).use(raw);
+                                ((Consumable) inventory.get(0)).addMore(raw);
+                                goldSpent += p.getInventory().get(1).getPrice() * raw;
+                                buyItem(p.getInventory().get(0).getPrice() * raw);
+                                p.sellItem(p.getInventory().get(1).getPrice() * raw);
+                                trade = true;
+                            } else if((willing * inventory.get(0).getPrice()) < wealth){
+                                ((Consumable) p.getInventory().get(1)).use(willing);
+                                ((Consumable) inventory.get(0)).addMore(willing);
+                                goldSpent += p.getInventory().get(1).getPrice() * willing;
+                                buyItem(p.getInventory().get(0).getPrice() * willing);
+                                p.sellItem(p.getInventory().get(1).getPrice() * willing);
+                                trade = true;
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Butcher) {
+                    if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                        Iterator<Item> it = inventory.iterator();
+                        while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Bread")) {
+                                if (j.getPrice() < p.getWealth()) {
+                                    p.getInventory().add(j);
+                                    it.remove();
+                                    job.eatBread();
+                                    p.getJob().newBread();
+                                    p.addFood(((Food) j).getFood());
+                                    totalFood -= ((Food) j).getFood();
+                                    goldEarned += j.getPrice();
+                                    sellItem(j.getPrice());
+                                    p.buyItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Baker){
+                    if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                        Iterator<Item> it = inventory.iterator();
+                        while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Bread")) {
+                                if (j.getPrice() < p.getWealth()) {
+                                    p.getInventory().add(j);
+                                    it.remove();
+                                    job.eatBread();
+                                    p.getJob().newBread();
+                                    p.addFood(((Food) j).getFood());
+                                    totalFood -= ((Food) j).getFood();
+                                    goldEarned += j.getPrice();
+                                    sellItem(j.getPrice());
+                                    p.buyItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    } else if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Bread")) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    p.getJob().eatBread();
+                                    job.newBread();
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Clothier) {
+                    if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                        Iterator<Item> it = inventory.iterator();
+                        while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Bread")) {
+                                if (j.getPrice() < p.getWealth()) {
+                                    p.getInventory().add(j);
+                                    it.remove();
+                                    job.eatBread();
+                                    p.getJob().newBread();
+                                    p.addFood(((Food) j).getFood());
+                                    totalFood -= ((Food) j).getFood();
+                                    goldEarned += j.getPrice();
+                                    sellItem(j.getPrice());
+                                    p.buyItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Blacksmith) {
+                    if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                        Iterator<Item> it = inventory.iterator();
+                        while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Bread")) {
+                                if (j.getPrice() < p.getWealth()) {
+                                    p.getInventory().add(j);
+                                    it.remove();
+                                    job.eatBread();
+                                    p.getJob().newBread();
+                                    p.addFood(((Food) j).getFood());
+                                    totalFood -= ((Food) j).getFood();
+                                    goldEarned += j.getPrice();
+                                    sellItem(j.getPrice());
+                                    p.buyItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Carpenter) {
+                    if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                        Iterator<Item> it = inventory.iterator();
+                        while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Bread")) {
+                                if (j.getPrice() < p.getWealth()) {
+                                    p.getInventory().add(j);
+                                    it.remove();
+                                    job.eatBread();
+                                    p.getJob().newBread();
+                                    p.addFood(((Food) j).getFood());
+                                    totalFood -= ((Food) j).getFood();
+                                    goldEarned += j.getPrice();
+                                    sellItem(j.getPrice());
+                                    p.buyItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    if (p.foodNeeded() > 0 && foodNeeded() == 0) {
+                        Iterator<Item> it = inventory.iterator();
+                        while (p.foodNeeded() > 0 && foodNeeded() == 0 && goldEarned < (p.getWealth() / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Bread")) {
+                                if (j.getPrice() < p.getWealth()) {
+                                    p.getInventory().add(j);
+                                    it.remove();
+                                    job.eatBread();
+                                    p.getJob().newBread();
+                                    p.addFood(((Food) j).getFood());
+                                    totalFood -= ((Food) j).getFood();
+                                    goldEarned += j.getPrice();
+                                    sellItem(j.getPrice());
+                                    p.buyItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if (job instanceof Clothier) {
+                if (p.getJob() instanceof Farmer) {
+                    if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    if (j.getName().equals("Milk")) {
+                                        p.getJob().eatMilk();
+                                        job.newMilk();
+                                    } else if (j.getName().equals("Carrot")) {
+                                        p.getJob().eatCarrot();
+                                        job.newCarrot();
+                                    } else if (j.getName().equals("Potato")) {
+                                        p.getJob().eatPotato();
+                                        job.newPotato();
+                                    }
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Butcher) {
+                    if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Meat")) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    p.getJob().eatMeat();
+                                    job.newMeat();
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                }else if(p.getJob() instanceof Baker){
+                    if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Bread")) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    p.getJob().eatBread();
+                                    job.newBread();
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Clothier) {
 
-            }else if(p.getJob() instanceof Clothier){
+                } else if (p.getJob() instanceof Blacksmith) {
 
-            }else if(p.getJob() instanceof Blacksmith){
+                } else if (p.getJob() instanceof Hunter) {
 
-            }else if(p.getJob() instanceof Carpenter){
+                } else {
 
-            }
-        }else if(job instanceof Butcher){
-            if(p.getJob() instanceof Farmer){
+                }
+            } else if (job instanceof Miner) {
+                if (p.getJob() instanceof Farmer) {
+                    if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    if (j.getName().equals("Milk")) {
+                                        p.getJob().eatMilk();
+                                        job.newMilk();
+                                    } else if (j.getName().equals("Carrot")) {
+                                        p.getJob().eatCarrot();
+                                        job.newCarrot();
+                                    } else if (j.getName().equals("Potato")) {
+                                        p.getJob().eatPotato();
+                                        job.newPotato();
+                                    }
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Butcher) {
+                    if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Meat")) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    p.getJob().eatMeat();
+                                    job.newMeat();
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                }else if(p.getJob() instanceof Baker){
+                    if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Bread")) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    p.getJob().eatBread();
+                                    job.newBread();
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Clothier) {
 
-            }else if(p.getJob() instanceof Butcher){
+                } else if (p.getJob() instanceof Blacksmith) {
 
-            }else if(p.getJob() instanceof Clothier){
+                } else if (p.getJob() instanceof Carpenter) {
 
-            }else if(p.getJob() instanceof Blacksmith){
+                }
+            } else if (job instanceof Blacksmith) {
+                if (p.getJob() instanceof Farmer) {
+                    if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    if (j.getName().equals("Milk")) {
+                                        p.getJob().eatMilk();
+                                        job.newMilk();
+                                    } else if (j.getName().equals("Carrot")) {
+                                        p.getJob().eatCarrot();
+                                        job.newCarrot();
+                                    } else if (j.getName().equals("Potato")) {
+                                        p.getJob().eatPotato();
+                                        job.newPotato();
+                                    }
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Butcher) {
+                    if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Meat")) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    p.getJob().eatMeat();
+                                    job.newMeat();
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                }else if(p.getJob() instanceof Baker){
+                    if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Bread")) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    p.getJob().eatBread();
+                                    job.newBread();
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Clothier) {
 
-            }else if(p.getJob() instanceof Carpenter){
+                } else if (p.getJob() instanceof Blacksmith) {
 
-            }else{
+                } else if (p.getJob() instanceof Carpenter) {
 
-            }
-        }else if(job instanceof Baker){
-            if(p.getJob() instanceof Farmer){
+                }
+            } else if (job instanceof Lumberjack) {
+                if (p.getJob() instanceof Farmer) {
+                    if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    if (j.getName().equals("Milk")) {
+                                        p.getJob().eatMilk();
+                                        job.newMilk();
+                                    } else if (j.getName().equals("Carrot")) {
+                                        p.getJob().eatCarrot();
+                                        job.newCarrot();
+                                    } else if (j.getName().equals("Potato")) {
+                                        p.getJob().eatPotato();
+                                        job.newPotato();
+                                    }
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Butcher) {
+                    if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Meat")) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    p.getJob().eatMeat();
+                                    job.newMeat();
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                }else if(p.getJob() instanceof Baker){
+                    if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Bread")) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    p.getJob().eatBread();
+                                    job.newBread();
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Clothier) {
 
-            }else if(p.getJob() instanceof Butcher){
+                }
+            } else {
+                if (p.getJob() instanceof Farmer) {
+                    if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && !(j.getName().equals("Meat")) && !(j.getName().equals("Bread"))) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    if (j.getName().equals("Milk")) {
+                                        p.getJob().eatMilk();
+                                        job.newMilk();
+                                    } else if (j.getName().equals("Carrot")) {
+                                        p.getJob().eatCarrot();
+                                        job.newCarrot();
+                                    } else if (j.getName().equals("Potato")) {
+                                        p.getJob().eatPotato();
+                                        job.newPotato();
+                                    }
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Butcher) {
+                    if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Meat")) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    p.getJob().eatMeat();
+                                    job.newMeat();
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                }else if(p.getJob() instanceof Baker){
+                    if (foodNeeded() > 0 && p.foodNeeded() == 0) {
+                        Iterator<Item> it = p.getInventory().iterator();
+                        while (foodNeeded() > 0 && p.foodNeeded() == 0 && goldSpent < (wealth / 10) && it.hasNext()) {
+                            Item j = it.next();
+                            if (j instanceof Food && j.getName().equals("Bread")) {
+                                if (j.getPrice() < wealth) {
+                                    inventory.add(j);
+                                    it.remove();
+                                    p.getJob().eatBread();
+                                    job.newBread();
+                                    totalFood += ((Food) j).getFood();
+                                    p.loseFood(((Food) j).getFood());
+                                    goldSpent += j.getPrice();
+                                    buyItem(j.getPrice());
+                                    p.sellItem(j.getPrice());
+                                    trade = true;
+                                }
+                            }
+                        }
+                    }
+                } else if (p.getJob() instanceof Clothier) {
 
-            }else if(p.getJob() instanceof Clothier){
-
-            }else if(p.getJob() instanceof Blacksmith){
-
-            }else if(p.getJob() instanceof Carpenter){
-
-            }else{
-
-            }
-        }else if(job instanceof Clothier){
-            if(p.getJob() instanceof Farmer){
-
-            }else if(p.getJob() instanceof Butcher){
-
-            }else if(p.getJob() instanceof Clothier){
-
-            }else if(p.getJob() instanceof Blacksmith){
-
-            }else if(p.getJob() instanceof Hunter){
-
-            }else{
-
-            }
-        }else if(job instanceof Miner){
-            if(p.getJob() instanceof Farmer){
-
-            }else if(p.getJob() instanceof Butcher){
-
-            }else if(p.getJob() instanceof Clothier){
-
-            }else if(p.getJob() instanceof Blacksmith){
-
-            }else if(p.getJob() instanceof Carpenter){
-
-            }
-        }else if(job instanceof Blacksmith){
-            if(p.getJob() instanceof Farmer){
-
-            }else if(p.getJob() instanceof Butcher){
-
-            }else if(p.getJob() instanceof Clothier){
-
-            }else if(p.getJob() instanceof Blacksmith){
-
-            }else if(p.getJob() instanceof Carpenter){
-
-            }
-        }else if(job instanceof Lumberjack){
-            if(p.getJob() instanceof Farmer){
-
-            }else if(p.getJob() instanceof Butcher){
-
-            }else if(p.getJob() instanceof Clothier){
-
-            }
-        }else{
-            if(p.getJob() instanceof Farmer){
-
-            }else if(p.getJob() instanceof Butcher){
-
-            }else if(p.getJob() instanceof Clothier){
-
+                }
             }
         }
+        return trade;
+    }
+
+    public int foodNeeded(){
+        int need = 6 * paranoid - (health / 2);
+        if(isMarried()){
+            for(int i = 0; i < children.size(); i++){
+                if(children.get(i).isAlive() && children.get(i).getAge() < 16) {
+                    need += 3 * paranoid - (children.get(i).getHealth() / 2);
+                }
+            }
+            if(spouse.isAlive()){
+                need /= 2;
+            }
+        }
+        need -= totalFood;
+        if(need < 0){
+            need = 0;
+        }
+        return need;
+    }
+
+    public void addFood(int food){
+        totalFood += food;
+    }
+    
+    public void loseFood(int food){
+        totalFood -= food;
+    }
+    
+    public void buyItem(int w){
+        wealth -= w;
+    }
+
+    public void sellItem(int w){
+        wealth += w;
     }
 
     public void setRelationship(Person p, int change){
@@ -723,6 +1961,10 @@ public class Person {
 
     public ArrayList<Item> getInventory(){
         return inventory;
+    }
+
+    public int getHealth(){
+        return health;
     }
 
     public HairStyle getRandomHairStyles(){
@@ -832,8 +2074,7 @@ public class Person {
         }
         s += "Health: " + health + "\n";
         s += "Wealth: " + wealth;
-        s += "\n" +
-                "Competence: " + competence + ", Paranoia: " + paranoid;
+        s += "\n" + "Competence: " + competence + ", Paranoia: " + paranoid;
         if(age >= 16){
             s += "\n" + job;
         }

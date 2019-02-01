@@ -41,7 +41,7 @@ public class Farmer extends Job {
     }
 
     @Override
-    public void work(ArrayList<Item> inven, int intel){
+    public int work(ArrayList<Item> inven, int intel, int food){
         for(int i = 0; i < inven.size(); i++){
             Item j = inven.get(i);
             if(j instanceof Animal){
@@ -99,22 +99,23 @@ public class Farmer extends Job {
             int work = Randomizer.getRandom(5);
             switch (work){
                 case 0:
-                    milkCow(inven);
+                    food = milkCow(inven, food);
                     break;
                 case 1:
                     shearSheep(inven);
                     break;
                 case 2:
-                    growCarrots(inven);
+                    food = growCarrots(inven, food);
                     break;
                 case 3:
-                    growPotatoes(inven);
+                    food = growPotatoes(inven, food);
                     break;
                 case 4:
                     growWheat(inven);
                     break;
             }
         }
+        return food;
     }
 
     @Override
@@ -153,11 +154,12 @@ public class Farmer extends Job {
 
     }
 
-    public boolean milkCow(ArrayList<Item> inven){
+    public int milkCow(ArrayList<Item> inven, int food){
         if(hasCows && hasBucket && Randomizer.getRandom(7) == 0){
             for(int i = 0; i < cows; i++){
                 inven.add(ItemBuilder.newItem("Milk", 0));
                 milk++;
+                food += 4;
             }
             boolean found = false;
             Iterator<Item> it = inven.iterator();
@@ -177,9 +179,9 @@ public class Farmer extends Job {
                     }
                 }
             }
-            return true;
+            return food;
         }
-        return false;
+        return food;
     }
 
     public boolean shearSheep(ArrayList<Item> inven){
@@ -209,11 +211,12 @@ public class Farmer extends Job {
         return false;
     }
 
-    public void growCarrots(ArrayList<Item> inven){
+    public int growCarrots(ArrayList<Item> inven, int food){
         if(hasPlow && hasCart && hasShovel && Randomizer.getRandom(60) == 0){
             for(int i = 0; i < 40; i++){
                 inven.add(ItemBuilder.newItem("Carrot", 0));
                 carrot++;
+                food++;
             }
             boolean found1 = false;
             boolean found2 = false;
@@ -264,13 +267,15 @@ public class Farmer extends Job {
                 }
             }
         }
+        return food;
     }
 
-    public void growPotatoes(ArrayList<Item> inven){
+    public int growPotatoes(ArrayList<Item> inven, int food){
         if(hasPlow && hasCart && hasShovel && Randomizer.getRandom(90) == 0){
             for(int i = 0; i < 20; i++){
                 inven.add(ItemBuilder.newItem("Potato", 0));
                 potato++;
+                food += 3;
             }
             boolean found1 = false;
             boolean found2 = false;
@@ -321,6 +326,7 @@ public class Farmer extends Job {
                 }
             }
         }
+        return food;
     }
 
     public void growWheat(ArrayList<Item> inven){
@@ -370,7 +376,7 @@ public class Farmer extends Job {
         String s = "Job: Farmer\n";
         s += "Cows: " + cows + ", Sheep: " + sheep + ", Pigs: " + pigs;
         s += "\nShears: " + shears + ", Buckets: " + buckets + ", Plows: " + plow + ", Shovels: " + shovel + ", Carts: " + cart;
-        s += "\nMilk: " + milk + ", Carrots: " + carrot + ", Potatoes: " + potato + ", Meat: " + meat;
+        s += "\nMilk: " + milk + ", Carrots: " + carrot + ", Potatoes: " + potato + ", Meat: " + meat + ", Bread: " + bread;
         s += "\nRaw Meat: " + rawMeat + ", Wool: " + wool + ", Wheat: " + wheat;
         return s;
     }

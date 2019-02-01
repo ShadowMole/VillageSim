@@ -10,8 +10,8 @@ public class Lumberjack extends Job {
     }
 
     @Override
-    public void work(ArrayList<Item> inven, int intel){
-
+    public int work(ArrayList<Item> inven, int intel, int food){
+        return food;
     }
 
     @Override

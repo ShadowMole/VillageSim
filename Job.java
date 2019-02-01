@@ -7,6 +7,7 @@ public abstract class Job {
     protected int carrot;
     protected int potato;
     protected int meat;
+    protected int bread;
 
     protected boolean hasCarrots;
     protected boolean hasPotatoes;
@@ -16,7 +17,9 @@ public abstract class Job {
     public Job() {
 
     }
-    public void work(ArrayList<Item> inven, int intel){ }
+    public int work(ArrayList<Item> inven, int intel, int food){
+        return food;
+    }
 
     public ItemType[] getProduces(){
         return produces;
@@ -44,6 +47,34 @@ public abstract class Job {
 
     public void eatPotato(){
         potato--;
+    }
+
+    public void eatMeat(){
+        meat--;
+    }
+
+    public void eatBread(){
+        bread--;
+    }
+
+    public void newMilk() {
+        milk++;
+    }
+
+    public void newCarrot(){
+        carrot++;
+    }
+
+    public void newPotato(){
+        potato++;
+    }
+
+    public void newMeat(){
+        meat++;
+    }
+
+    public void newBread(){
+        bread++;
     }
 
     public boolean isHasCarrots() {

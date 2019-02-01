@@ -9,7 +9,7 @@ public class PersonBuilder {
     private static String[] lastNames = {"Smith", "Johnson", "Williams", "Jones", "Brown", "Davis", "Miller", "Wilson", "Moore", "Taylor", "Anderson", "Thomas", "Jackson", "White", "Harris", "Martin", "Thompson", "Garcia", "Martinez", "Robinson", "Clark", "Rodriguez", "Lewis", "Lee", "Walker", "Hall", "Allen", "Young", "Hernandez", "King", "Wright", "Lopez", "Hill", "Scott", "Green", "Adams", "Baker", "Gonzalez", "Nelson", "Carter", "Mitchell", "Perez", "Roberts", "Turner", "Phillips", "Campbell", "Parker", "Evans", "Edwards", "Collins", "Stewart", "Sanchez", "Morris", "Rogers", "Reed", "Cook", "Morgan", "Bell", "Murphy", "Bailey", "Rivera", "Cooper", "Richardson", "Cox", "Howard", "Ward", "Torres", "Peterson", "Gray", "Ramirez", "James", "Watson", "Brooks", "Kelly", "Sanders", "Price", "Bennett", "Wood", "Barnes", "Ross", "Henderson", "Coleman", "Jenkins", "Perry", "Powell", "Long", "Patterson", "Hughes", "Flores", "Washington", "Butler", "Simmons", "Foster", "Gonzales", "Bryant", "Alexander", "Russell", "Griffin", "Diaz", "Hayes", "Intile", "Bruman", "Shaw", "Bohn", "Gerbe", "Carberry", "Walder", "Antaki", "Worthington", "Seibert", "Spinelli", "Scagnelli", "Brown", "Schneider", "File", "Wardell", "Vadeika", "Iloncai", "Darnell"};
     private static String[] femaleFirstNames = {"Sophia", "Emma", "Olivia", "Ava", "Mia", "Isabella", "Riley", "Aria", "Zoe", "Charlotte", "Lily", "Layla", "Amelia", "Emily", "Madelyn", "Aubrey", "Adalyn", "Madison", "Chloe", "Harper", "Abigail", "Aaliyah", "Avery", "Evelyn", "Kaylee", "Ella", "Ellie", "Scarlett", "Arianna", "Hailey", "Nora", "Addison", "Brooklyn", "Hannah", "Mila", "Leah", "Elizabeth", "Sarah", "Eliana", "Mackenzie", "Peyton", "Maria", "Grace", "Adeline", "Elena", "Anna", "Victoria", "Camilla", "Lillian", "Natalie", "Isabelle", "Skyler", "Maya", "Lucy", "Lila", "Audrey", "Makayla", "Penelope", "Claire", "Paisley", "Savannah", "Alaina", "Gabriella", "Violet", "Kylie", "Charlie", "Stella", "Allison", "Liliana", "Eva", "Callie", "Kinsley", "Reagan", "Sophie", "Alyssa", "Alice", "Caroline", "Aurora", "Eleanor", "Juliana", "Annabelle", "Emilia", "Sadie", "Bella", "Julia", "Keira", "Bailey", "Hazel", "Jocelyn", "London", "Samantha", "Vivian", "Gianna", "Alexandra", "Cora", "Melanie", "Everly", "Jordyn", "Luna", "Yazmin", "Kristen", "Yvonne", "Sandra"};
 
-    public static Person newPerson(Person mother, Person father, int counter){
+    public static Person newPerson(Person mother, Person father, int counter, ArrayList<String> events){
         Gender g = RandomEnum.getRandomGender();
         String first;
         if(g == Gender.FEMALE){
@@ -31,8 +31,8 @@ public class PersonBuilder {
                 comRange *= -1;
         }
         int com = ((father.getCompetence() + mother.getCompetence()) / 2) - comRange + Randomizer.getRandom(comRange * 2);
-        if(com > 20){
-            com = 20;
+        if(com > 25){
+            com = 25;
         }else if(com < 1){
             com = 1;
         }
@@ -44,8 +44,8 @@ public class PersonBuilder {
             paraRange *= -1;
         }
         int para = ((father.getParanoid() + mother.getParanoid()) / 2) - paraRange + Randomizer.getRandom(paraRange * 2);
-        if(para > 30){
-            para = 30;
+        if(para > 20){
+            para = 20;
         }else if( para < 1){
             para = 1;
         }
@@ -59,7 +59,7 @@ public class PersonBuilder {
         }
         mother.addChild(p);
         father.addChild(p);
-        System.out.println(p.getFirstName() + " " + p.getLastName() + " is born.");
+        events.add(p.getFirstName() + " " + p.getLastName() + " is born.");
         return p;
     }
 
@@ -80,9 +80,9 @@ public class PersonBuilder {
         HairStyle[] hs = {RandomEnum.getRandomHairStyles(), RandomEnum.getRandomHairStyles()};
         HairColor[] hc = {RandomEnum.getRandomHairColors(), RandomEnum.getRandomHairColors()};
 
-        int compet = Randomizer.getRandom(20 ) + 1;
+        int compet = Randomizer.getRandom(21 ) + 5;
 
-        int para = Randomizer.getRandom(30) + 1;
+        int para = Randomizer.getRandom(20) + 1;
 
         Person p = new Person(first, last, g, age, wealth, null, null, new ArrayList<Person>(), 0, sc, hs, hc, ec, 200, compet, para);
 
